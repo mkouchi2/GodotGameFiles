@@ -1,0 +1,62 @@
+extends KinematicBody2D
+# Constants
+const MAX_SPEED = 90
+const ACCELERATION = 900
+const FRICTION = 400
+# Variable Macros
+var pressed = false
+var canMove = true
+
+# Variables
+var velocity = Vector2.ZERO
+onready var animationPlayer = $AnimationPlayer
+onready var animationTree = $AnimationTree
+onready var animationState = animationTree.get("parameters/playback")
+var sprite
+
+
+func _ready():
+	var sprite = get_node("Sprite")
+	
+func _input(event):
+	if event.is_action_pressed("ui_interact"):
+		pressed = true
+	elif event.is_action_released("ui_interact"):
+		pressed = false
+	
+func _physics_process(delta):
+	# Returns a vector whenever a key is pressed for motion 
+	var input_vector = Vector2.ZERO
+	input_vector.x = Input.get_action_strength("ui_right") - Input.get_action_strength("ui_left")
+	input_vector.y = Input.get_action_strength("ui_down") - Input.get_action_strength("ui_up")
+	input_vector = input_vector.normalized() 
+	
+		
+	# Vector returns for as long as velocity vector is not 0 (not moving) 
+	if input_vector != Vector2.ZERO:
+		animationTree.set("parameters/Idle/blend_position", input_vector)
+		animationTree.set("parameters/Run/blend_position", input_vector)
+		animationState.travel("Run")
+		velocity = velocity.move_toward(input_vector * MAX_SPEED, ACCELERATION * delta)
+	
+	else: 
+		animationState.travel("Idle")
+		velocity = velocity.move_toward(Vector2.ZERO, FRICTION * delta)
+	
+	velocity = move_and_slide(velocity)
+	
+	if Input.is_action_pressed("ui_interact"):
+		var interact = true
+
+	pressed = false
+	
+func interact(result):
+	for dictionary in result:
+		if typeof(dictionary.collider) == TYPE_OBJECT and dictionary.collider.has_node("Interact"):
+			get_node("Camera2D/Dialog_Player").set_hidden(false)
+			get_node("Camera2D/Dialog_Player")._print_dialogue(dictionary.collider.get_node("Interact").text)
+
+
+
+		
+		
